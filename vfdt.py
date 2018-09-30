@@ -359,6 +359,8 @@ def test_run():
     df = pd.read_csv('./dataset/waveform.data', header=None, sep=',')
     # df = pd.read_csv('./dataset/default_of_credit_card_clients.csv', skiprows=1, header=0)
     # df = df.drop(df.columns[0], axis=1)
+
+
     df = df.sample(frac=1).reset_index(drop=True)  # shuffle data rows
     title = list(df.columns.values)
     features = title[:-1]
@@ -371,19 +373,29 @@ def test_run():
         df1.month = df1.month.map(d)
     # month_str_to_int(df)
     # print(df.head(5)['month'])
-    # convert df to data examples
-    n_training = 4500
-    array = df.head(n_training).values
 
-    set1 = array[:1000, :]
-    set2 = array[1000:2000, :]
-    set3 = array[2000:, :]
+    # convert df to data examples
+    n_training = int(df.shape[0] * 0.7)
+    n_cache = int(n_training * 0.2)
+    n_training = n_training - n_cache
+    training_data = df.iloc[:n_training]
+    
+
+    # date head
+    array = training_data.head().values
+
+    set1 = array[:int(n_training / 3), :]
+    set2 = array[int(n_training / 3):int(n_training / 3 * 2), :]
+    set3 = array[int(n_training / 3 * 2):, :]
+
+    # cache head
+    cache_boxes = training_data.tail()
 
     # to simulate continuous training, modify the tree for each training set
     examples = [set1, set2, set3]
 
     # test set is different from training set
-    n_test = 500
+    n_test = df.shape[0] * 0.3
     test_set = df.tail(n_test).values
     x_test = test_set[:, :-1]
     y_test = test_set[:, -1]
