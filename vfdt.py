@@ -366,36 +366,30 @@ def test_run():
     features = title[:-1]
     rows = df.shape[0]
 
-    # change month string to int
-    def month_str_to_int(df1):
-        import calendar
-        d = dict((v.lower(),k) for k,v in enumerate(calendar.month_abbr))
-        df1.month = df1.month.map(d)
-    # month_str_to_int(df)
-    # print(df.head(5)['month'])
-
     # convert df to data examples
+    # training 56% cache 14%
     n_training = int(df.shape[0] * 0.7)
+    training_data = df.iloc[:n_training]
     n_cache = int(n_training * 0.2)
     n_training = n_training - n_cache
-    training_data = df.iloc[:n_training]
     
-
     # date head
-    array = training_data.head().values
+    array = training_data.head(n_training).values
 
     set1 = array[:int(n_training / 3), :]
     set2 = array[int(n_training / 3):int(n_training / 3 * 2), :]
     set3 = array[int(n_training / 3 * 2):, :]
 
     # cache head
-    cache_boxes = training_data.tail()
+    cache_boxes = training_data.tail(n_cache).values
+    x_cache = cache_boxes[:,:-1]
+    y_cache = cache_boxes[:,-1]
 
     # to simulate continuous training, modify the tree for each training set
     examples = [set1, set2, set3]
 
     # test set is different from training set
-    n_test = df.shape[0] * 0.3
+    n_test = int(df.shape[0] * 0.3)
     test_set = df.tail(n_test).values
     x_test = test_set[:, :-1]
     y_test = test_set[:, -1]
@@ -418,9 +412,21 @@ def test_run():
         y_train = training_set[:, -1]
         for x, y in zip(x_train, y_train):
             tree.update(x, y)  # fit data
-        y_pred = tree.predict(x_test)
+        y_pred = tree.predict(x_cache)
         print('Training set:', n, end=', ')
-        print('ACCURACY: %.4f' % accuracy_score(y_test, y_pred))
+        ##################
+        idx = np.where(y_pred == 'popular')
+            place the idx_video to the cache
+        ##################
+
+    ##################
+    ACCURACY EVALUTION
+    if test_data have the same idx_video in cache:
+        hit ++
+        sample++
+    else:
+        sample++
+        #print('ACCURACY: %.4f' % accuracy_score(y_test, y_pred))
 
     # tree.print_tree(tree.root)
     print("--- Running time: %.6f seconds ---" % (time.time() - start_time))
